@@ -17,7 +17,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.deepOrange,
       ),
-      home: PokemonList(),
+      home: Scaffold(
+        appBar: AppBar(title: Text("Pokemon Cards List")),
+        body: PokemonList(),
+      ),
     );
   }
 
@@ -45,14 +48,18 @@ class _PokemonListState extends State<PokemonList> {
   Widget build(BuildContext context) {
     return FutureBuilder(
       builder: (context, projectSnap) {
-        if (!projectSnap.hasData) {
-          print("no data found");
-          return new Container();
-        }
         return ListView.builder(
           padding: EdgeInsets.all(16.0),
           itemBuilder: (context, i) {
-            if (i.isOdd) return const Divider();
+            if (i.isOdd)
+              return const Divider(
+                color: Colors.grey,
+              );
+
+            if (!projectSnap.hasData) {
+              print("no data found");
+              return new Container();
+            }
 
             final index = i ~/ 2;
             var cards;
