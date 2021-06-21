@@ -6,7 +6,8 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  final api = PokemonTcgApi(apiKey: );
+  static String _apiKey = "7ac0ef65-12c3-4a0b-86e3-8cdc3a31eac6";
+  static late PokemonTcgApi _api;
 
   // This widget is the root of your application.
   @override
@@ -14,19 +15,18 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Track your poke',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
         primarySwatch: Colors.deepOrange,
       ),
       home: PokemonList(),
     );
+  }
+
+  static PokemonTcgApi get api => _api;
+
+  static String get apiKey => _apiKey;
+
+  static set api(PokemonTcgApi value) {
+    _api = value;
   }
 }
 
@@ -38,8 +38,57 @@ class PokemonList extends StatefulWidget {
 }
 
 class _PokemonListState extends State<PokemonList> {
+  final _cards = <PokemonCard>[];
+  int _cardsPage = 0;
+
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(itemBuilder: );
+    return FutureBuilder(
+      builder: (context, projectSnap) {
+        if (!projectSnap.hasData) {
+          print("no data found");
+          return new Container();
+        }
+        return ListView.builder(
+          padding: EdgeInsets.all(16.0),
+          itemBuilder: (context, i) {
+            if (i.isOdd) return const Divider();
+
+            final index = i ~/ 2;
+            var cards;
+            if (index >= _cards.length) {
+              cards = projectSnap.data as List<PokemonCard>;
+              _cardsPage = _cardsPage + 1;
+              _cards.addAll(cards);
+            }
+            print("card ${_cards[index]}");
+            return _cardRow(card: _cards[index]);
+          },
+        );
+      },
+      future: _getNextCardPage(),
+    );
+  }
+
+  Widget _cardRow({required PokemonCard card}) {
+    return Material(
+        child: ListTile(
+      title: Text(
+        card.name,
+        textAlign: TextAlign.left,
+        style: const TextStyle(fontSize: 18.0),
+      ),
+      onTap: () => print("${card.name} tapped"),
+    ));
+  }
+
+  _getNextCardPage() async {
+    return await MyApp.api.getCards(page: _cardsPage);
+  }
+
+  @override
+  void initState() {
+    MyApp.api = PokemonTcgApi(apiKey: MyApp.apiKey);
+    super.initState();
   }
 }
